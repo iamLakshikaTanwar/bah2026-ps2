@@ -1,0 +1,81 @@
+# Base configuration — shared substrate for cpu_smoke.yaml and gpu_full.yaml.
+# Validated against cloudremoval.config.Config (pydantic v2). Other config files
+# may include this via a top-level `base: base.yaml` key (deep-merged underneath).
+#
+# Section keys mirror Config exactly: data / model / train / eval / infer / serve.
+
+data:
+  name: synthetic # synthetic | lissiv_ner | sen12mscr
+  root: null
+  tile_size: 128
+  halo: 16
+  bands: [green, red, nir]
+  use_sar: true
+  use_dem: true
+  use_temporal: false
+  max_temporal: 3
+  norm: zscore # zscore | percentile
+  batch_size: 4
+  num_workers: 0
+  synthetic_n: 32
+  cloud_mode: mixed # thin | thick | mixed
+
+model:
+  name: unet
+  in_channels: 3
+  out_channels: 3
+  base_channels: 32
+  depth: 3
+  use_sar: true
+  use_dem: false
+  use_temporal: false
+  uncertainty: false
+  timesteps: 1000
+  sample_steps: 5
+  mean_reverting: false
+  gan_lambda_l1: 100.0
+  extra: {}
+
+train:
+  epochs: 1
+  max_steps: null
+  lr: 2.0e-4
+  weight_decay: 0.0
+  device: cpu # cpu | cuda
+  precision: "32" # 32 | 16 | bf16
+  use_lightning: false
+  grad_clip: 1.0
+  log_every: 10
+  ckpt_dir: outputs/ckpt
+  seed: 1337
+  loss:
+    l1: 1.0
+    carl: 0.0
+    ssim: 0.0
+    sam: 0.0
+    perceptual: 0.0
+    adversarial: 0.0
+    nll: 0.0
+    tv: 0.0
+
+eval:
+  masked: true
+  strata: [whole, cloud, shadow, thin, thick]
+  metrics: [psnr, ssim, sam, ergas, ndvi_mae]
+  out_dir: outputs/eval
+
+infer:
+  tile_size: 128
+  halo: 16
+  blend: hann # hann | gaussian | none
+  device: cpu
+  backend: torch # torch | onnx | tensorrt
+  out_cog: outputs/recon.tif
+  write_uncertainty: true
+
+serve:
+  host: 0.0.0.0
+  port: 8000
+  cog_dir: outputs
+  cache: memory # memory | redis
+  redis_url: null

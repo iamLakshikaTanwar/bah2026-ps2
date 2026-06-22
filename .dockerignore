@@ -1,0 +1,51 @@
+# Keep the build context small and the image clean.
+.git/
+.github/
+.gitignore
+.dockerignore
+
+# Python caches / build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Test / lint caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage*
+
+# ML artifacts, data, outputs (not needed at build time)
+outputs/
+mlruns/
+wandb/
+lightning_logs/
+data/
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.tif
+*.tiff
+*.npy
+
+# Docs / notebooks / research (not needed in the runtime image)
+notebooks/
+research/
+docs/
+*.md
+!README.md
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store

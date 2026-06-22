@@ -1,0 +1,25 @@
+# ---------------------------------------------------------------------------
+# CORE runtime stack ONLY — the minimal dependencies the CPU-smoke path needs.
+# `import cloudremoval` and the synthetic pipeline run with just these (no GPU,
+# no network, no geospatial libs).
+#
+# Heavy / geospatial / accelerator dependencies are intentionally NOT listed
+# here. Install them via the extras defined in pyproject.toml, e.g.:
+#     pip install -e ".[geo]"      # rasterio, COG, masking, data engine
+#     pip install -e ".[serve]"    # rio-tiler, redis tiling/serving
+#     pip install -e ".[train]"    # lightning, torchmetrics, mlflow
+#     pip install -e ".[accel]"    # onnx, onnxruntime, faiss
+#     pip install -e ".[dev]"      # pytest, ruff, black, mypy, pre-commit
+#     pip install -e ".[all]"      # everything
+#
+# For CPU-only torch use the official index:
+#     pip install torch --index-url https://download.pytorch.org/whl/cpu
+# ---------------------------------------------------------------------------
+numpy>=1.24
+torch>=2.0
+pydantic>=2.5
+pyyaml>=6.0
+fastapi>=0.110
+uvicorn>=0.27
+typer>=0.9
+click>=8.1
