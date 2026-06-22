@@ -344,7 +344,6 @@ def _create_cog_rio_cogeo(
 ) -> str | None:
     """COG via ``rio-cogeo`` if installed, else ``None``."""
     try:
-        import rasterio  # type: ignore
         from rasterio.io import MemoryFile  # type: ignore
         from rio_cogeo.cogeo import cog_translate  # type: ignore
         from rio_cogeo.profiles import cog_profiles  # type: ignore
@@ -366,17 +365,16 @@ def _create_cog_rio_cogeo(
         out.parent.mkdir(parents=True, exist_ok=True)
         dst_profile = cog_profiles.get("deflate")
         dst_profile.update({"blockxsize": blocksize, "blockysize": blocksize})
-        with MemoryFile() as mem:
-            with mem.open(**src_profile) as src:
-                src.write(arr)
-                cog_translate(
-                    src,
-                    str(out),
-                    dst_profile,
-                    overview_level=5 if overviews else 0,
-                    in_memory=True,
-                    quiet=True,
-                )
+        with MemoryFile() as mem, mem.open(**src_profile) as src:
+            src.write(arr)
+            cog_translate(
+                src,
+                str(out),
+                dst_profile,
+                overview_level=5 if overviews else 0,
+                in_memory=True,
+                quiet=True,
+            )
         return str(out)
     except Exception as exc:  # noqa: BLE001
         _log.warning("rio-cogeo COG write failed (%s); trying rasterio", exc)
@@ -410,9 +408,7 @@ def _create_cog_rasterio(
             "compress": "deflate",
         }
         if profile:
-            prof.update(
-                {k: v for k, v in profile.items() if k in {"crs", "transform", "nodata"}}
-            )
+            prof.update({k: v for k, v in profile.items() if k in {"crs", "transform", "nodata"}})
         out.parent.mkdir(parents=True, exist_ok=True)
         with rasterio.open(out, "w", **prof) as dst:
             dst.write(arr)

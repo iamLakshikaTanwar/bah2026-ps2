@@ -115,9 +115,7 @@ def detect_clouds(
         mask = _omnicloudmask_predict(arr, green_idx, red_idx, nir_idx)
 
     if mask is None:
-        prob = cloud_probability(
-            arr, green_idx=green_idx, red_idx=red_idx, nir_idx=nir_idx
-        )
+        prob = cloud_probability(arr, green_idx=green_idx, red_idx=red_idx, nir_idx=nir_idx)
         mask = (prob >= threshold).astype(np.float32)
 
     mask = mask.astype(np.float32)[None, ...]  # [1, H, W]

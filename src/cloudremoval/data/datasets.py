@@ -261,9 +261,7 @@ class SyntheticCloudRemovalDataset(Dataset):
         self.size = int(getattr(self.data_cfg, "tile_size", 64))
         self._base_seed = _split_seed(split)
         self._n = int(getattr(self.data_cfg, "synthetic_n", 32))
-        if split == "val":
-            self._n = max(2, self._n // 4)
-        elif split == "test":
+        if split in ("val", "test"):
             self._n = max(2, self._n // 4)
 
         root = getattr(self.data_cfg, "root", None)
@@ -670,7 +668,10 @@ def _read_triplet_manifest(root: Path, split: str) -> list[dict[str, str]]:
         if cand.exists():
             with cand.open("r", encoding="utf-8") as fh:
                 records = json.load(fh)
-            return [{k: str((root / v) if not Path(v).is_absolute() else v) for k, v in r.items()} for r in records]
+            return [
+                {k: str((root / v) if not Path(v).is_absolute() else v) for k, v in r.items()}
+                for r in records
+            ]
     _log.warning("no SEN12MS-CR manifest under %s; returning empty record list", root)
     return []
 

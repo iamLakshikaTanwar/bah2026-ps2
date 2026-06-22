@@ -24,6 +24,7 @@ the reader importable and testable on the minimal stack.
 
 from __future__ import annotations
 
+import contextlib
 import re
 from pathlib import Path
 from typing import Any
@@ -160,10 +161,8 @@ class BandMetaParser:
         for key in ("sun_elevation", "sun_azimuth"):
             val = self._lookup(key)
             if val is not None:
-                try:
+                with contextlib.suppress(IndexError, ValueError):
                     out[key] = float(re.findall(r"[-+]?\d*\.?\d+", val)[0])
-                except (IndexError, ValueError):
-                    pass
         for key in ("satellite", "sensor", "projection", "datum"):
             val = self._lookup(key)
             if val:
@@ -248,7 +247,9 @@ def _resolve_band_files(scene_dir: Path) -> tuple[str, str, str]:
     and assumes ascending order is G/R/NIR.
     """
     for triple in (_DEFAULT_BAND_FILES,):
-        if all((scene_dir / f).exists() or (scene_dir / f).with_suffix(".npy").exists() for f in triple):
+        if all(
+            (scene_dir / f).exists() or (scene_dir / f).with_suffix(".npy").exists() for f in triple
+        ):
             return triple
     candidates = sorted(
         p.name

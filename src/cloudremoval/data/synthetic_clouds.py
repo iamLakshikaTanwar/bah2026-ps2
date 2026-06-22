@@ -208,17 +208,12 @@ class CloudSimulator:
         coverage: float,
     ) -> np.ndarray:
         """Build a soft cloud-opacity field in ``[0, 1]`` covering ~``coverage``."""
-        field = fractal_noise_2d(
-            hw, rng, octaves=self.cfg.octaves, base_cells=self.cfg.base_cells
-        )
+        field = fractal_noise_2d(hw, rng, octaves=self.cfg.octaves, base_cells=self.cfg.base_cells)
         # Threshold so that ~coverage fraction of pixels are "clouded".
         coverage = float(np.clip(coverage, 0.0, 1.0))
         if coverage <= 0.0:
             return np.zeros(hw, dtype=np.float32)
-        if coverage >= 1.0:
-            thresh = 0.0
-        else:
-            thresh = float(np.quantile(field, 1.0 - coverage))
+        thresh = 0.0 if coverage >= 1.0 else float(np.quantile(field, 1.0 - coverage))
         soft = self.cfg.edge_softness + _EPS
         # Smooth ramp from 0 at (thresh) to 1 at (thresh + soft).
         alpha = np.clip((field - thresh) / soft, 0.0, 1.0)

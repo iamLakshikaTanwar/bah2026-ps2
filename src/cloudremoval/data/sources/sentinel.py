@@ -69,7 +69,19 @@ def map_s2_to_lissiv(
     """
     arr = np.asarray(s2_stack, dtype=np.float32)
     default_order = (
-        "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B10", "B11", "B12",
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6",
+        "B7",
+        "B8",
+        "B8A",
+        "B9",
+        "B10",
+        "B11",
+        "B12",
     )
     order = band_order or default_order[: arr.shape[0]]
     idx = [order.index(b) for b in S2_LISSIV_BANDS]
