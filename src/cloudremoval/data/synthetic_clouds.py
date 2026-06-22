@@ -27,14 +27,10 @@ by an explicit ``seed`` / ``numpy.random.Generator``.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 import numpy as np
 
 from cloudremoval.utils.logging import get_logger
-
-if TYPE_CHECKING:  # pragma: no cover - typing only
-    import torch
 
 __all__ = [
     "CloudSimConfig",
