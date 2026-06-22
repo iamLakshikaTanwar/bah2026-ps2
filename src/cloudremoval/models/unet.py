@@ -114,13 +114,13 @@ class _UNetBackbone(nn.Module):
         skips: list[Tensor] = []
         h = self.in_conv(x)
         skips.append(h)
-        for pool, down in zip(self.pools, self.downs):
+        for pool, down in zip(self.pools, self.downs, strict=True):
             h = down(pool(h))
             skips.append(h)
 
         # skips[-1] is the bottleneck; decode upward.
         h = skips[-1]
-        for idx, (up, up_conv) in enumerate(zip(self.ups, self.up_convs)):
+        for idx, (up, up_conv) in enumerate(zip(self.ups, self.up_convs, strict=True)):
             skip = skips[-(idx + 2)]
             h = up(h)
             h = F.interpolate(h, size=skip.shape[-2:], mode="bilinear", align_corners=False)

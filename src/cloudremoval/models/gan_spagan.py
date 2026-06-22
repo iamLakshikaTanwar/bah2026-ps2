@@ -139,13 +139,13 @@ class _AttnUNetGenerator(nn.Module):
         h, attn0 = self.enc_attn[0](h)
         skips = [h]
         last_attn = attn0
-        for down, attn in zip(self.downs, self.down_attn):
+        for down, attn in zip(self.downs, self.down_attn, strict=True):
             h = down(h)
             h, last_attn = attn(h)
             skips.append(h)
 
         h = skips[-1]
-        for idx, (up, merge) in enumerate(zip(self.ups, self.up_merge)):
+        for idx, (up, merge) in enumerate(zip(self.ups, self.up_merge, strict=True)):
             skip = skips[-(idx + 2)]
             h = up(h)
             if h.shape[-2:] != skip.shape[-2:]:

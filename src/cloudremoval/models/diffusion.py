@@ -121,9 +121,7 @@ class TimeUNet(nn.Module):
         depth = max(1, int(depth))
         chans = [base_channels * (2**i) for i in range(depth + 1)]
         self.t_dim = t_dim
-        self.t_mlp = nn.Sequential(
-            nn.Linear(t_dim, t_dim), nn.SiLU(), nn.Linear(t_dim, t_dim)
-        )
+        self.t_mlp = nn.Sequential(nn.Linear(t_dim, t_dim), nn.SiLU(), nn.Linear(t_dim, t_dim))
 
         self.in_conv = nn.Conv2d(in_ch, chans[0], kernel_size=3, padding=1)
         self.down_blocks = nn.ModuleList()
@@ -150,12 +148,12 @@ class TimeUNet(nn.Module):
         t_emb = self.t_mlp(_sinusoidal_embedding(t, self.t_dim))
         h = self.in_conv(x)
         skips: list[Tensor] = []
-        for block, down in zip(self.down_blocks, self.downs):
+        for block, down in zip(self.down_blocks, self.downs, strict=True):
             h = block(h, t_emb)
             skips.append(h)
             h = down(h)
         h = self.mid(h, t_emb)
-        for idx, (up, block) in enumerate(zip(self.ups, self.up_blocks)):
+        for idx, (up, block) in enumerate(zip(self.ups, self.up_blocks, strict=True)):
             skip = skips[-(idx + 1)]
             h = up(h)
             if h.shape[-2:] != skip.shape[-2:]:
@@ -192,9 +190,7 @@ class DiffusionModel(BaseCloudRemovalModel):
         self.timesteps = int(getattr(cfg, "timesteps", 1000))
         # Prefer an explicit ``sampling_steps``; fall back to the contract's
         # ``sample_steps`` field; default to a small CPU-friendly value.
-        self.sampling_steps = int(
-            getattr(cfg, "sampling_steps", getattr(cfg, "sample_steps", 10))
-        )
+        self.sampling_steps = int(getattr(cfg, "sampling_steps", getattr(cfg, "sample_steps", 10)))
         self.schedule = str(getattr(cfg, "schedule", "linear"))
         self.use_sar = bool(getattr(cfg, "use_sar", False))
         self.mean_reverting = bool(getattr(cfg, "mean_reverting", False))
@@ -214,9 +210,7 @@ class DiffusionModel(BaseCloudRemovalModel):
         # Buffers move with .to(device) and are excluded from the optimizer.
         self.register_buffer("betas", betas, persistent=False)
         self.register_buffer("alphas_cumprod", alphas_cumprod, persistent=False)
-        self.register_buffer(
-            "sqrt_alphas_cumprod", torch.sqrt(alphas_cumprod), persistent=False
-        )
+        self.register_buffer("sqrt_alphas_cumprod", torch.sqrt(alphas_cumprod), persistent=False)
         self.register_buffer(
             "sqrt_one_minus_acp", torch.sqrt(1.0 - alphas_cumprod), persistent=False
         )

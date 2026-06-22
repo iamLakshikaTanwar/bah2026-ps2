@@ -125,9 +125,7 @@ class GDFN(nn.Module):
         super().__init__()
         hidden = max(channels, int(channels * expansion))
         self.project_in = nn.Conv2d(channels, hidden * 2, kernel_size=1)
-        self.dwconv = nn.Conv2d(
-            hidden * 2, hidden * 2, kernel_size=3, padding=1, groups=hidden * 2
-        )
+        self.dwconv = nn.Conv2d(hidden * 2, hidden * 2, kernel_size=3, padding=1, groups=hidden * 2)
         self.project_out = nn.Conv2d(hidden, channels, kernel_size=1)
 
     def forward(self, x: Tensor) -> Tensor:
@@ -289,7 +287,7 @@ class RestormerModel(BaseCloudRemovalModel):
         h = self.patch_embed(x)
 
         skips: list[Tensor] = []
-        for enc, down in zip(self.encoders, self.downs):
+        for enc, down in zip(self.encoders, self.downs, strict=True):
             h = enc(h)
             skips.append(h)
             h = down(h)
@@ -298,7 +296,9 @@ class RestormerModel(BaseCloudRemovalModel):
         if self.sar_fusion is not None:
             h = self.sar_fusion(h, self._get_sar(sample, x))
 
-        for idx, (up, reduce, dec) in enumerate(zip(self.ups, self.reduces, self.decoders)):
+        for idx, (up, reduce, dec) in enumerate(
+            zip(self.ups, self.reduces, self.decoders, strict=True)
+        ):
             skip = skips[-(idx + 1)]
             h = up(h)
             if h.shape[-2:] != skip.shape[-2:]:
