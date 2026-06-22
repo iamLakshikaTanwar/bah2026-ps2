@@ -128,6 +128,10 @@ include = ["cloudremoval*"]
 line-length = 100
 target-version = "py310"
 src = ["src", "tests", "scripts"]
+# Notebooks use display-expression / imports-not-at-top idioms and carry embedded
+# outputs we must not re-save; exclude them so a repo-wide `ruff check .` is green
+# while src/, tests/ and scripts/ stay fully linted.
+extend-exclude = ["notebooks", "*.ipynb"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B", "C4", "SIM"]
