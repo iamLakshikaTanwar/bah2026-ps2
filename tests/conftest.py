@@ -26,11 +26,17 @@ import pytest
 
 # --------------------------------------------------------------------------- #
 # Make ``src/`` importable without an editable install (must run at import time).
+# The repo root is also added so the top-level ``scripts`` package (which the CLI
+# delegates to and the smoke test imports as ``scripts.<name>``) resolves even
+# under pytest's ``--import-mode=importlib``, where the rootdir is *not* added to
+# ``sys.path`` and ``scripts`` is not part of the installed ``cloudremoval`` wheel.
 # --------------------------------------------------------------------------- #
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _SRC = _REPO_ROOT / "src"
 if _SRC.is_dir() and str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 
 def _make_sample(
