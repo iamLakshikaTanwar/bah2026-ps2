@@ -1,0 +1,26 @@
+# Serving configuration — drives `cloudremoval serve` (scripts/serve.py).
+# Validated against cloudremoval.config.Config (pydantic v2). Extends base.yaml
+# (deep-merged underneath); only values change, never structure. The serving app
+# boots on the minimal CPU stack with cache="memory" and no GPU (BUILD_PLAN §3.9).
+
+base: ../base.yaml
+
+# Which model the API serves and how tiled inference runs per request.
+model:
+  name: unet # registered model to load lazily on first /predict
+  base_channels: 32
+  depth: 3
+
+infer:
+  tile_size: 256 # XYZ/tiled-inference tile size (px)
+  halo: 32 # overlap/halo between tiles for seam-free blending
+  blend: hann # hann | gaussian | none
+  device: cpu # cpu | cuda
+  backend: torch # torch | onnx | tensorrt (non-torch lazy, falls back to torch)
+
+serve:
+  host: 0.0.0.0
+  port: 8000
+  cog_dir: outputs # where written COGs / reconstructions live
+  cache: memory # memory | redis (content-addressed tile cache; O(1) lookup)
+  redis_url: null # e.g. redis://localhost:6379/0 when cache: redis
