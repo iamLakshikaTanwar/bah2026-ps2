@@ -71,6 +71,24 @@ def _broadcast_mask(mask: np.ndarray, channels: int) -> np.ndarray:
 # --------------------------------------------------------------------------- #
 # Mask feathering & compositing
 # --------------------------------------------------------------------------- #
+def _box_blur_axis(arr: np.ndarray, axis: int, radius: int, k: int) -> np.ndarray:
+    """Shape-preserving 1-D box-mean of width ``k`` along ``axis`` (edge-padded).
+
+    Pads ``radius`` on each side, then computes a length-``k`` windowed sum from a
+    zero-prepended cumulative sum so the output length equals the input length.
+    """
+    pad_width = [(0, 0)] * arr.ndim
+    pad_width[axis] = (radius, radius)
+    padded = np.pad(arr, pad_width, mode="edge")
+    csum = np.cumsum(padded, axis=axis)
+    zero_shape = list(csum.shape)
+    zero_shape[axis] = 1
+    csum = np.concatenate([np.zeros(zero_shape, dtype=csum.dtype), csum], axis=axis)
+    upper = np.take(csum, indices=range(k, csum.shape[axis]), axis=axis)
+    lower = np.take(csum, indices=range(0, csum.shape[axis] - k), axis=axis)
+    return (upper - lower) / float(k)
+
+
 def feather_mask(mask: np.ndarray, radius: int = 4) -> np.ndarray:
     """Soften a hard 0/1 mask into a smooth alpha for a seamless paste.
 
@@ -89,16 +107,14 @@ def feather_mask(mask: np.ndarray, radius: int = 4) -> np.ndarray:
     if radius <= 0:
         return np.clip(m, 0.0, 1.0)
     k = 2 * radius + 1
-    pad = radius
     out = m
     # Two box-blur passes ~ a triangular (smooth) kernel — cheap and dependency-free.
+    # Each pass is a shape-preserving sliding-window mean via a zero-prepended
+    # cumulative sum: pad by ``radius`` per side, then a length-``k`` window over
+    # the (L+1)-long cumsum yields exactly L outputs.
     for _ in range(2):
-        padded = np.pad(out, ((0, 0), (pad, pad), (pad, pad)), mode="edge")
-        cy = np.cumsum(padded, axis=1)
-        cy = cy[:, k:, :] - cy[:, :-k, :]
-        cx = np.cumsum(cy, axis=2)
-        cx = cx[:, :, k:] - cx[:, :, :-k]
-        out = cx / float(k * k)
+        out = _box_blur_axis(out, axis=1, radius=radius, k=k)
+        out = _box_blur_axis(out, axis=2, radius=radius, k=k)
     return np.clip(out, 0.0, 1.0).astype(np.float32)
 
 

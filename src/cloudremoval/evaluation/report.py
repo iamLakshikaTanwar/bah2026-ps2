@@ -300,7 +300,7 @@ def _render_triptych(spec: dict[str, Any], fig_dir: Path, index: int) -> str | N
     fig, axes = plt.subplots(1, len(panels), figsize=(4 * len(panels), 4))
     if len(panels) == 1:
         axes = [axes]
-    for ax, (label, arr) in zip(axes, panels):
+    for ax, (label, arr) in zip(axes, panels, strict=False):
         img = to_rgb(arr)
         if img is None:
             ax.axis("off")

@@ -1,0 +1,22 @@
+# LISS-IV NER data config (B1) — our own Bhoonidhi tiles over North-East India.
+# Partial `data:` block matching cloudremoval.config.DataConfig. Requires
+# downloaded LISS-IV scenes (per-band GeoTIFFs + BAND_META.txt) under `root` and
+# rasterio installed — NOT exercised on the CPU smoke. Clear scenes are read,
+# DN->TOA-reflectance converted, then synthetically clouded for paired training;
+# real cloudy scenes are reserved for held-out evaluation (research/06 §E.5).
+
+data:
+  name: lissiv_ner
+  root: data/lissiv_ner # dir of scene subfolders, each with BAND2/3/4.tif + BAND_META.txt
+  tile_size: 256
+  halo: 32
+  bands: [green, red, nir]
+  use_sar: false # set true once co-registered Sentinel-1 GRD is paired in
+  use_dem: false # set true once a CartoDEM/GLO-30 tile is paired in
+  use_temporal: false # set true to use nearest-clear LISS-III/AWiFS references
+  max_temporal: 3
+  norm: percentile # robust per-scene 2-98% stretch for real radiometry
+  batch_size: 4
+  num_workers: 4
+  synthetic_n: 0 # ignored for real data
+  cloud_mode: mixed

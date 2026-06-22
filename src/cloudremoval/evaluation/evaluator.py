@@ -131,10 +131,10 @@ def _thin_thick_mask(
     keep = torch.zeros_like(cloud_bin)
     for i, m in enumerate(meta):
         ctype = str(m.get("cloud_type", "mixed")).lower() if isinstance(m, dict) else "mixed"
-        if ctype == stratum or (ctype == "mixed"):
-            # "mixed" tiles contribute to neither pure stratum to keep them clean.
-            if ctype == stratum:
-                keep[i] = cloud_bin[i]
+        # Only pure-stratum tiles contribute; "mixed" tiles are excluded to keep
+        # the thin/thick columns clean.
+        if ctype == stratum:
+            keep[i] = cloud_bin[i]
     if keep.sum() <= 0:
         return None
     return keep
@@ -227,7 +227,8 @@ class Evaluator:
                     if stratum not in band_bias_sums:
                         band_bias_sums[stratum] = [0.0] * len(bias)
                     band_bias_sums[stratum] = [
-                        a + v * batch_size for a, v in zip(band_bias_sums[stratum], bias)
+                        a + v * batch_size
+                        for a, v in zip(band_bias_sums[stratum], bias, strict=False)
                     ]
                     band_bias_counts[stratum] = band_bias_counts.get(stratum, 0) + batch_size
 

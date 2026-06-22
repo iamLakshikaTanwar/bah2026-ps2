@@ -18,8 +18,6 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import torch
-
 from cloudremoval.evaluation.evaluator import Evaluator
 from cloudremoval.utils.logging import get_logger
 from cloudremoval.utils.seed import seed_everything
@@ -44,7 +42,7 @@ ModelSpec = "str | Config | BaseCloudRemovalModel"
 
 
 def run_benchmark(
-    models: "list[str] | list[Config] | list[Any]",
+    models: list[Any],
     loader: DataLoader,
     cfg: Config,
     out_dir: str | Path | None = None,
