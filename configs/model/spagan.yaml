@@ -1,0 +1,22 @@
+# SpA-GAN / Pix2Pix-style adversarial cloud removal.
+# Partial `model:` config — merge over base.yaml / cpu_smoke.yaml.
+# Spatial-attention U-Net generator + PatchGAN discriminator. The trainer detects
+# the GAN hooks (generator_parameters / discriminator_parameters /
+# discriminator_loss) via hasattr and alternates G/D steps.
+
+model:
+  name: spagan
+  in_channels: 3
+  out_channels: 3
+  base_channels: 32
+  depth: 2 # generator down/up levels
+  use_sar: false
+  use_dem: false
+  use_temporal: false
+  uncertainty: false
+  use_cloud_mask: true # concat cloud mask to the generator input
+  gan_lambda_l1: 100.0 # Pix2Pix-style strong pixel term
+  gan_lambda_ssim: 1.0
+  gan_lambda_perceptual: 0.0 # 0 keeps CPU-smoke free of torchvision
+  gan_lambda_adv: 1.0
+  gan_mode: bce # bce | hinge

@@ -1,0 +1,17 @@
+# Restormer-style transformer (MDTA channel-attention + GDFN), U-shaped.
+# Partial `model:` config — merge over base.yaml / cpu_smoke.yaml.
+# Set use_sar: true to enable the optional GLF-CR-style SAR cross-attention
+# bottleneck (SAR keys/values attend optical queries).
+
+model:
+  name: restormer
+  in_channels: 3
+  out_channels: 3
+  base_channels: 32
+  depth: 2 # encoder/decoder levels (channels double per level)
+  num_blocks: 2 # transformer blocks per level
+  num_heads: 1 # MDTA heads (clamped to divide channel count)
+  use_sar: false # true -> enable GLF-CR SAR cross-attention
+  use_dem: false
+  use_temporal: false
+  uncertainty: false

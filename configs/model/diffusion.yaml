@@ -1,0 +1,20 @@
+# Conditional DDPM with SR3 concat conditioning; DDIM sampling at inference.
+# Partial `model:` config — merge over base.yaml / cpu_smoke.yaml.
+# timesteps is the training horizon; sampling_steps is the (small) DDIM budget so
+# CPU 64x64 inference finishes quickly.
+
+model:
+  name: diffusion
+  in_channels: 3
+  out_channels: 3
+  base_channels: 32
+  depth: 2
+  timesteps: 1000 # training diffusion steps
+  sampling_steps: 10 # DDIM steps at inference (cpu_smoke can override to ~2)
+  sample_steps: 10 # contract field alias (used if sampling_steps absent)
+  schedule: linear # linear | cosine
+  use_sar: false # true -> concat SAR to the SR3 conditioning
+  use_dem: false
+  use_temporal: false
+  uncertainty: false
+  mean_reverting: false # EMRDM hook (documented; base DDPM path used)
