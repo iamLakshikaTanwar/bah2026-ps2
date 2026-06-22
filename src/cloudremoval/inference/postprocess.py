@@ -330,7 +330,7 @@ def _poisson_scipy(
         b = np.zeros(n, dtype=np.float64)
         guide = recon[band]
         target = orig[band]
-        for p, (y, x) in enumerate(zip(ys, xs)):
+        for p, (y, x) in enumerate(zip(ys, xs, strict=True)):
             a[p, p] = 4.0
             lap = 0.0
             for dy, dx in neighbours:

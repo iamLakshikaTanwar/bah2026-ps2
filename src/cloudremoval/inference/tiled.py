@@ -25,7 +25,8 @@ Public API
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import torch
@@ -265,7 +266,7 @@ def tiled_inference(
         if acc is None:
             c_out = out_channels if out_channels is not None else recon_tiles[0].shape[0]
             acc = BlendAccumulator(c_out, hp, wp)
-        for (top, left), recon in zip(batch_coords, recon_tiles):
+        for (top, left), recon in zip(batch_coords, recon_tiles, strict=True):
             acc.add(recon, top, left, window)
 
     assert acc is not None  # at least one tile always exists

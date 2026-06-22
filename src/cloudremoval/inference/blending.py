@@ -256,7 +256,7 @@ def blend_tiles(
         raise ValueError("tiles and positions must have equal length")
     c, h, w = canvas_shape
     acc = BlendAccumulator(c, h, w)
-    for tile, (top, left) in zip(tiles, positions):
+    for tile, (top, left) in zip(tiles, positions, strict=True):
         arr = np.asarray(tile, dtype=np.float32)
         if arr.ndim == 2:
             arr = arr[None, ...]

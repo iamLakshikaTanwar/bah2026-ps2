@@ -161,10 +161,10 @@ def get_tile_cache(backend: str = "memory", redis_url: str | None = None) -> Til
 # FAISS nearest clear-reference retrieval (lazy)
 # --------------------------------------------------------------------------- #
 def retrieve_clear_reference(
-    query_embedding: "np.ndarray",
+    query_embedding: np.ndarray,
     index: Any | None = None,
     k: int = 1,
-) -> "np.ndarray | None":
+) -> np.ndarray | None:
     """ANN-retrieve the nearest clear-reference embedding(s) via FAISS (lazy).
 
     At inference, the best cloud-free analog of the query patch can condition /
@@ -225,7 +225,9 @@ def _placeholder_png() -> bytes:
     ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)  # 8-bit RGB
     raw = b"\x00" + b"\x00\x00\x00"  # one filtered scanline: filter byte + 1 RGB px
     idat = zlib.compress(raw)
-    return b"\x89PNG\r\n\x1a\n" + _chunk(b"IHDR", ihdr) + _chunk(b"IDAT", idat) + _chunk(b"IEND", b"")
+    return (
+        b"\x89PNG\r\n\x1a\n" + _chunk(b"IHDR", ihdr) + _chunk(b"IDAT", idat) + _chunk(b"IEND", b"")
+    )
 
 
 @router.get("/{z}/{x}/{y}.png", summary="Dynamic XYZ tile (rio-tiler, lazy)")

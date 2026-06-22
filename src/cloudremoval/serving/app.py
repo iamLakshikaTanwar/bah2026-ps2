@@ -238,7 +238,8 @@ def create_app(cfg: Config | None = None) -> FastAPI:
 
     # ----- mount the tiles router (guard so a heavy-dep error never breaks app) -
     try:
-        from cloudremoval.serving.tiles import get_tile_cache, router as tiles_router
+        from cloudremoval.serving.tiles import get_tile_cache
+        from cloudremoval.serving.tiles import router as tiles_router
 
         get_tile_cache(
             backend=cache_backend,

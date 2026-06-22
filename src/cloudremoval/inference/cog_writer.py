@@ -134,9 +134,7 @@ def write_cog(
     wants_tif = out.suffix.lower() in {".tif", ".tiff"}
     if wants_tif:
         try:
-            return _write_cog_rasterio(
-                arr, out, transform, crs, nodata, overviews, compress
-            )
+            return _write_cog_rasterio(arr, out, transform, crs, nodata, overviews, compress)
         except ImportError:
             _log.warning(
                 "rasterio unavailable; writing NumPy fallback for %s "
