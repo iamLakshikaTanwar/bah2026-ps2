@@ -471,12 +471,15 @@ Dependency order: **B0 first (blocking)**, then B1/B2 in parallel, then B3, then
 **Mission:** the six registered models, each subclassing `BaseCloudRemovalModel`, `@register_model`, CPU-runnable at tiny config, GPU-scalable. Use `LossBundle` (or own loss returning `LossDict`). Optional external-weight adapters guarded by try/except.
 **Owns:**
 - `src/cloudremoval/models/unet.py` → `@register_model("unet")` (encoder-decoder, optical-only, L1+SSIM via LossBundle)
-- `src/cloudremoval/models/dsen2cr_fusion.py` → `@register_model("dsen2cr_fusion")` (ResNet residual-correction, early SAR concat, CARL loss; optical-only if `use_sar=False`)
-- `src/cloudremoval/models/gan_spagan.py` → `@register_model("gan_spagan")` (spatial-attention generator + PatchGAN; exposes generator/discriminator params + `discriminator_loss`)
-- `src/cloudremoval/models/transformer_restormer.py` → `@register_model("transformer_restormer")` (MDTA channel-attention core + optional GLF-CR SAR cross-attention + Align-CR deformable align hook)
+- `src/cloudremoval/models/dsen2cr_fusion.py` → `@register_model("dsen2cr")` (file is `dsen2cr_fusion.py`; ResNet residual-correction, early SAR concat, CARL loss; optical-only if `use_sar=False`)
+- `src/cloudremoval/models/gan_spagan.py` → `@register_model("spagan")` (file is `gan_spagan.py`; spatial-attention generator + PatchGAN; exposes generator/discriminator params + `discriminator_loss`)
+- `src/cloudremoval/models/transformer_restormer.py` → `@register_model("restormer")` (file is `transformer_restormer.py`; MDTA channel-attention core + optional GLF-CR SAR cross-attention + Align-CR deformable align hook)
 - `src/cloudremoval/models/diffusion.py` → `@register_model("diffusion")` (DDPM train / DDIM `predict()` override; SR3 concat conditioning; optional SAR channels; `mean_reverting` option; consistency-distill hook)
 - `src/cloudremoval/models/uncertainty.py` → `@register_model("uncertainty")` (wraps a configurable backbone, adds aleatoric `log_var` head, NLL loss; populates `ModelOutput.uncertainty`)
 - `configs/model/{unet,dsen2cr,spagan,restormer,diffusion,uncertainty}.yaml`
+
+> **Naming convention:** registry key = short name (the `@register_model(...)` argument / config `model.name` / CLI selector, e.g. `dsen2cr`, `spagan`, `restormer`); the source file may use the longer descriptive name (`dsen2cr_fusion.py`, `gan_spagan.py`, `transformer_restormer.py`).
+
 **Done when:** for every name in `list_models()`, `build_model` + one `forward(synthetic_batch)` + `.loss(...)['total'].backward()` + `.predict(...)` run on CPU and `ModelOutput.reconstruction` has shape `[B,3,H,W]`.
 
 ### B3 — Training & Evaluation (depends on B0, B1, B2)

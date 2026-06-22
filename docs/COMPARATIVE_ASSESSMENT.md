@@ -160,11 +160,13 @@ We implement **one model per family plus a baseline (six total)**, behind the si
 | Registry name | Family | Synthesized from | Why this one |
 |---|---|---|---|
 | `unet` | CNN baseline | UNet (C7/C1), DSen2 lineage | **Mandatory control**; quantifies GenAI value-add and hallucination; always CPU-fast |
-| `dsen2cr_fusion` | SAR-optical fusion (CNN/GAN) | **DSen2-CR (G8)** + Simulation-Fusion (G10) idea | Thick-cloud workhorse; **CARL mask-weighted loss** fits imperfect pairs; residual preserves spectra; SEN12MS-CR transfer; non-adversarial = stable |
-| `gan_spagan` | GAN | **SpA-GAN (G4)** + Pix2Pix (G1) | MIT, pretrained, spatial-attention texture/sharpness; thin-cloud specialist; light/CPU-trainable |
-| `transformer_restormer` | Transformer / fusion | **Restormer (T1)** + **GLF-CR (T7)** + **Align-CR (T8)** fusion mechanics | Channel-attention core (no seams) + SAR cross-attention + deformable alignment for real misregistration; best long-range structure |
+| `dsen2cr` | SAR-optical fusion (CNN/GAN) | **DSen2-CR (G8)** + Simulation-Fusion (G10) idea | Thick-cloud workhorse; **CARL mask-weighted loss** fits imperfect pairs; residual preserves spectra; SEN12MS-CR transfer; non-adversarial = stable |
+| `spagan` | GAN | **SpA-GAN (G4)** + Pix2Pix (G1) | MIT, pretrained, spatial-attention texture/sharpness; thin-cloud specialist; light/CPU-trainable |
+| `restormer` | Transformer / fusion | **Restormer (T1)** + **GLF-CR (T7)** + **Align-CR (T8)** fusion mechanics | Channel-attention core (no seams) + SAR cross-attention + deformable alignment for real misregistration; best long-range structure |
 | `diffusion` | Diffusion | **DiffCR (D7)** + **EMRDM (D10)** mean-reverting + **CM-CR (D15)** consistency + SR3 (D2) concat | Best occlusion prior; DDIM few-step; mean-reverting for spectral fidelity; optional SAR conditioning + distillation for speed |
 | `uncertainty` | Multitemporal / uncertainty wrapper | **UnCRtainTS (M1)** | Per-pixel aleatoric variance head wrappable on any backbone; the operational differentiator; feeds cross-verification confidence |
+
+> **Naming convention.** The "Registry name" column is the short key (`dsen2cr`, `spagan`, `restormer`) used by the CLI / config `model.name` / serving API; the source file may carry the longer descriptive name (`dsen2cr_fusion.py`, `gan_spagan.py`, `transformer_restormer.py`).
 
 **Cross-cutting, implemented as shared infrastructure (not separate registry models):**
 - **Transfer backbone:** Prithvi-EO-2.0 / DOFA (F1/F2) as optional encoder initializer + MAE self-sup (`research/03 §5`).

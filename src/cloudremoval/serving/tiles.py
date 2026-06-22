@@ -236,7 +236,7 @@ def get_tile(
     x: int,
     y: int,
     scene: str | None = None,
-    model_name: str = "identity",
+    model_name: str = "unet",
     rescale: str | None = None,
 ) -> Response:
     """Serve one XYZ tile, cached by content hash; renders from a COG via rio-tiler.

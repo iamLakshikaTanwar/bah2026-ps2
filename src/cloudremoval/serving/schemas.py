@@ -105,7 +105,7 @@ class PredictRequest(BaseModel):
 
     model_config = ConfigDict(protected_namespaces=())
 
-    model_name: str = Field("identity", description="Registered model to run.")
+    model_name: str = Field("unet", description="Registered model to run.")
     array: ArraySpec | None = Field(None, description="Inline input array (base64 npy).")
     input_ref: str | None = Field(None, description="Server-side path / COG URL / scene id.")
     cloud_mask: ArraySpec | None = Field(None, description="Optional inline cloud mask [1,H,W].")
@@ -142,7 +142,7 @@ class TileParams(BaseModel):
     z: int = Field(..., ge=0, le=30)
     x: int = Field(..., ge=0)
     y: int = Field(..., ge=0)
-    model_name: str = "identity"
+    model_name: str = "unet"
     scene: str | None = Field(None, description="Scene id / COG ref to tile from.")
     rescale: str | None = Field(None, description="min,max for display rescaling.")
     colormap: str | None = None
@@ -159,7 +159,7 @@ class ReconstructRequest(BaseModel):
     cog_url: str | None = None
     scene_id: str | None = None
     array: ArraySpec | None = None
-    model: str = "identity"
+    model: str = "unet"
     params: PredictOptions = Field(default_factory=PredictOptions)
 
 
