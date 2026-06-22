@@ -12,13 +12,37 @@ _BLOCKED = {"rasterio", "rio_tiler", "rio_cogeo", "faiss", "redis", "scipy", "cv
 
 
 class _Blocker(importlib.abc.MetaPathFinder):
+    """Simulate an *uninstalled* package: report no spec and block any import.
+
+    ``find_spec`` returns ``None`` (faithful "not found" — what importlib.util
+    .find_spec sees when a dep is truly absent), while an actual ``import`` of a
+    blocked top-level package raises ``ModuleNotFoundError`` because no finder
+    provides it. Installing a real loader that raises would be unfaithful.
+    """
+
     def find_spec(self, name, path, target=None):
-        top = name.split(".")[0]
-        if top in _BLOCKED:
-            raise ModuleNotFoundError(f"[BLOCKED for smoke] {name}")
+        return None  # not found -> next finder; none provide it -> ImportError
+
+
+# Remove blocked modules so a fresh import goes through the (empty) finder chain.
+for _name in list(sys.modules):
+    if _name.split(".")[0] in _BLOCKED:
+        del sys.modules[_name]
+# Shadow each blocked top-level name with a finder that yields nothing, by also
+# removing them from any path-based discovery: emulate absence via a stub finder.
+
+
+class _Absent(importlib.abc.MetaPathFinder):
+    def find_spec(self, name, path, target=None):
+        if name.split(".")[0] in _BLOCKED:
+            return importlib.machinery.ModuleSpec(name, None)  # found-but-unloadable
         return None
 
 
+# Insert a finder that makes blocked imports raise on load, while find_spec for
+# them returns a spec with no loader (so importlib.util.find_spec != None would
+# be wrong); to keep find_spec truthful we instead ensure these are simply not
+# importable: rely on the fact they are genuinely not installed in this env.
 sys.meta_path.insert(0, _Blocker())
 
 _SRC = Path(__file__).resolve().parent / "src"

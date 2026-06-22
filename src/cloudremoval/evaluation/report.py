@@ -175,9 +175,7 @@ def _metrics_table(metrics: dict[str, dict[str, float]]) -> str:
     strata = list(metrics.keys())
     present = [m for m in _METRIC_ORDER if any(m in metrics[s] for s in strata)]
     # Include any non-standard metrics at the end.
-    extra = sorted(
-        {m for s in strata for m in metrics[s] if m not in _METRIC_ORDER}
-    )
+    extra = sorted({m for s in strata for m in metrics[s] if m not in _METRIC_ORDER})
     cols = present + extra
     header = ["Stratum", *[_METRIC_LABEL.get(c, c) for c in cols]]
     rows: list[list[str]] = []
@@ -190,9 +188,7 @@ def _metrics_table(metrics: dict[str, dict[str, float]]) -> str:
 def _bias_table(bias: dict[str, list[float]]) -> str:
     """Per-band bias table (one row per stratum, one column per band)."""
     max_bands = max((len(v) for v in bias.values()), default=0)
-    band_labels = ["Green", "Red", "NIR"][:max_bands] + [
-        f"B{i}" for i in range(3, max_bands)
-    ]
+    band_labels = ["Green", "Red", "NIR"][:max_bands] + [f"B{i}" for i in range(3, max_bands)]
     header = ["Stratum", *band_labels]
     rows: list[list[str]] = []
     for stratum, values in bias.items():
@@ -254,8 +250,7 @@ def _qualitative_section(out: Path, figures: list[dict[str, Any]] | None) -> str
             lines.append(f"\n**{title}**\n\n![{title}]({rel})\n")
         else:
             lines.append(
-                f"\n**{title}** — _figure skipped (matplotlib unavailable or "
-                f"missing data)._\n"
+                f"\n**{title}** — _figure skipped (matplotlib unavailable or " f"missing data)._\n"
             )
     return "\n".join(lines)
 

@@ -302,7 +302,10 @@ def tiles_info() -> dict[str, Any]:
     def _have(mod: str) -> bool:
         import importlib.util
 
-        return importlib.util.find_spec(mod) is not None
+        try:
+            return importlib.util.find_spec(mod) is not None
+        except (ImportError, ModuleNotFoundError, ValueError):
+            return False
 
     cache = get_tile_cache()
     return {

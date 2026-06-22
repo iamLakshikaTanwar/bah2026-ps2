@@ -156,7 +156,9 @@ def rmse(pred: Tensor, target: Tensor, mask: Tensor | None = None) -> float:
     return _to_float(torch.sqrt(mse.clamp_min(0.0)))
 
 
-def psnr(pred: Tensor, target: Tensor, mask: Tensor | None = None, data_range: float = 1.0) -> float:
+def psnr(
+    pred: Tensor, target: Tensor, mask: Tensor | None = None, data_range: float = 1.0
+) -> float:
     """Peak signal-to-noise ratio in dB (higher is better). Returns ``float``.
 
     Computed over (optionally) ``mask``-selected pixels. Identical images give a
@@ -223,7 +225,9 @@ def _ssim_map(
     return num / (den + _EPS)
 
 
-def ssim(pred: Tensor, target: Tensor, mask: Tensor | None = None, data_range: float = 1.0) -> float:
+def ssim(
+    pred: Tensor, target: Tensor, mask: Tensor | None = None, data_range: float = 1.0
+) -> float:
     """Structural similarity (per-band, then averaged), in ``[-1, 1]`` (≈1 good).
 
     Returns a Python ``float``. When a ``mask`` is given the SSIM map is averaged
@@ -450,7 +454,7 @@ def lpips(pred: Tensor, target: Tensor, mask: Tensor | None = None, net: str = "
 
     def to_rgb(x: Tensor) -> Tensor:
         x3 = x[:, :3] if x.shape[1] >= 3 else x[:, :1].repeat(1, 3, 1, 1)
-        return (x3.clamp(0.0, 1.0) * 2.0 - 1.0)
+        return x3.clamp(0.0, 1.0) * 2.0 - 1.0
 
     try:
         model = _LPIPS_CACHE.get(net)

@@ -93,9 +93,7 @@ def build_stratum_masks(
             if cloud_bin is None and shadow_bin is None:
                 out["clear"] = None
             else:
-                occluded = torch.zeros_like(
-                    cloud_bin if cloud_bin is not None else shadow_bin
-                )
+                occluded = torch.zeros_like(cloud_bin if cloud_bin is not None else shadow_bin)
                 if cloud_bin is not None:
                     occluded = occluded + cloud_bin
                 if shadow_bin is not None:
@@ -237,8 +235,7 @@ class Evaluator:
 
         metrics_out = {
             stratum: {
-                metric: sums[stratum][metric] / counts[stratum][metric]
-                for metric in sums[stratum]
+                metric: sums[stratum][metric] / counts[stratum][metric] for metric in sums[stratum]
             }
             for stratum in self.strata
         }

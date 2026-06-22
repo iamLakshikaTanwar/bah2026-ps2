@@ -443,9 +443,8 @@ class Trainer:
     # Small utilities
     # ------------------------------------------------------------------ #
     def _reached_max_steps(self) -> bool:
-        return (
-            self.cfg.train.max_steps is not None
-            and self.global_step >= int(self.cfg.train.max_steps)
+        return self.cfg.train.max_steps is not None and self.global_step >= int(
+            self.cfg.train.max_steps
         )
 
     @staticmethod
@@ -460,9 +459,7 @@ class Trainer:
         for key, value in logs.items():
             history.setdefault(key, []).append(value)
 
-    def _probe_uncertainty(
-        self, model: BaseCloudRemovalModel, loader: DataLoader
-    ) -> bool:
+    def _probe_uncertainty(self, model: BaseCloudRemovalModel, loader: DataLoader) -> bool:
         """Detect whether the model emits an uncertainty map (transparent handling).
 
         Runs a single no-grad forward on one batch and checks

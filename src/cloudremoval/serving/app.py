@@ -73,8 +73,16 @@ def _encode_npy_b64(array: np.ndarray) -> str:
 
 
 def _have(module: str) -> bool:
-    """Return ``True`` if an optional module is importable (no import side effect)."""
-    return importlib.util.find_spec(module) is not None
+    """Return ``True`` if an optional module is importable (no import side effect).
+
+    Uses ``find_spec`` so no heavy module is actually imported. Any failure
+    (missing module, or a broken/partial install whose ``find_spec`` raises) is
+    treated as "not available" so ``/info`` never errors on the minimal stack.
+    """
+    try:
+        return importlib.util.find_spec(module) is not None
+    except (ImportError, ModuleNotFoundError, ValueError):
+        return False
 
 
 # --------------------------------------------------------------------------- #

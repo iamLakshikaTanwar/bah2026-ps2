@@ -252,9 +252,7 @@ def _is_higher_better(col: str) -> bool:
     return True
 
 
-def _resolve_rank_column(
-    rows: list[dict[str, Any]], rank_metric: str, rank_stratum: str
-) -> str:
+def _resolve_rank_column(rows: list[dict[str, Any]], rank_metric: str, rank_stratum: str) -> str:
     """Pick the flattened column for the overall rank, falling back to 'whole'."""
     preferred = f"{rank_stratum}/{rank_metric}"
     if any(_is_number(r.get(preferred)) for r in rows):
@@ -268,9 +266,7 @@ def _resolve_rank_column(
 def _save_leaderboard(leaderboard: list[dict[str, Any]], out_dir: Path) -> None:
     """Write the leaderboard to ``leaderboard.json`` and ``leaderboard.csv``."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "leaderboard.json").write_text(
-        json.dumps(leaderboard, indent=2), encoding="utf-8"
-    )
+    (out_dir / "leaderboard.json").write_text(json.dumps(leaderboard, indent=2), encoding="utf-8")
     if leaderboard:
         import csv
 
