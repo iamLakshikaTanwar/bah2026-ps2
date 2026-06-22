@@ -55,6 +55,9 @@ contract.
 - [CLI usage](#cli-usage)
 - [Configuration](#configuration)
 - [The `SAMPLE` contract](#the-sample-contract)
+- [Documentation](#documentation)
+- [Results (smoke)](#results-smoke)
+- [Status / limitations](#status--limitations)
 - [Extending: add a model](#extending-add-a-model)
 - [Repository map](#repository-map)
 - [Development](#development)
@@ -79,9 +82,17 @@ contract.
   (PSNR/SSIM/**SAM/ERGAS**/NDVI-MAE) with cloud/shadow/thin/thick strata; CARL,
   spectral-angle, and uncertainty losses resist radiometric hallucination.
 - **Analysis-ready outputs.** Tiled blended inference → Cloud-Optimized GeoTIFF
-  (+ uncertainty band) + STAC, served over an O(1)-per-tile FastAPI + Redis stack.
+  (+ uncertainty band) + STAC, served over an **O(1)-per-tile** FastAPI stack —
+  COG ranged-GET reads + content-addressed cache (Redis/in-memory LRU) + FAISS
+  nearest-clear retrieval + ONNX/TensorRT acceleration (`ARCHITECTURE.md` §6).
+- **Multi-satellite by design.** LISS-IV is the only target; Sentinel-1 SAR
+  (structure under cloud), Sentinel-2 (band-matched spectral proxy/pretrain),
+  LISS-III/AWiFS (SWIR teacher + temporal), MODIS/INSAT (cloud climatology) and a
+  Copernicus DEM (shadow geometry) cross-verify the reconstruction
+  ([`docs/DATA_CARD.md`](docs/DATA_CARD.md)).
 - **Reproducible.** Typed `pydantic v2` configs, deterministic seeding, `ruff` +
-  `black`, and a CPU smoke test that gates every commit in CI.
+  `black`, a CPU smoke test that gates every commit in CI, and an executable
+  [quickstart notebook](notebooks/01_quickstart.ipynb).
 
 ---
 
@@ -101,9 +112,8 @@ download → preprocess → simulate → train → eval → benchmark → infer 
         │   BaseCloudRemovalModel  ·  forward() · loss() · predict() · name        │
         └───────────────▲───────────────────────────────────────▲─────────────────┘
                         │ @register_model(...)                   │ build_model(cfg)
-      ┌───────┬─────────┴────┬───────────┬───────────┬───────────┴────┐
-    unet  dsen2cr_fusion  gan_spagan  transformer_  diffusion   uncertainty
-                                       restormer
+      ┌───────┬──────┴───┬───────────┬───────────┬────────────┴─┐
+    unet   dsen2cr   spagan    restormer   diffusion    uncertainty
                         │                                       │
               ┌─────────┴─────────┬───────────────┬─────────────┴────────┐
            Trainer            Evaluator     Benchmark runner       Tiled inference
@@ -122,19 +132,22 @@ Chosen to cover the fidelity/speed/data-efficiency frontier and satisfy
 "≥1 per family + a baseline" (full justification in
 [`docs/COMPARATIVE_ASSESSMENT.md`](docs/COMPARATIVE_ASSESSMENT.md)):
 
-| Registry name             | Family            | Role |
-| ------------------------- | ----------------- | ---- |
-| `unet`                    | CNN baseline      | Time-tested encoder-decoder, optical-only (L1+SSIM). The control that quantifies how much GenAI adds. |
-| `dsen2cr_fusion`          | SAR-optical ResNet| Residual correction, early SAR concat, **CARL loss**. The robust thick-cloud workhorse for persistent NER cloud. |
-| `gan_spagan`              | GAN               | Spatial-attention generator + PatchGAN. Fine 5.8 m texture; thin-cloud specialist. |
-| `transformer_restormer`   | Transformer       | MDTA channel-attention core (+ optional GLF-CR SAR cross-attention). Best long-range structure. |
-| `diffusion`               | Diffusion         | DDPM train / DDIM sample; SR3 concat conditioning; mean-reverting option. Best generative prior under total occlusion. |
-| `uncertainty`             | Uncertainty head  | Wraps any backbone, adds per-pixel aleatoric variance (NLL). The operational confidence map. |
+| Registry name   | Family            | Role |
+| --------------- | ----------------- | ---- |
+| `unet`          | CNN baseline      | Time-tested encoder-decoder, optical-only (Charbonnier + SSIM + SAM). The control that quantifies how much GenAI adds. |
+| `dsen2cr`       | SAR-optical ResNet| Residual correction, early SAR concat, **CARL loss**. The robust thick-cloud workhorse for persistent NER cloud. |
+| `spagan`        | GAN               | Spatial-attention generator + PatchGAN. Fine 5.8 m texture; thin-cloud specialist. |
+| `restormer`     | Transformer       | MDTA channel-attention core (+ optional GLF-CR SAR cross-attention). Best long-range structure. |
+| `diffusion`     | Diffusion         | DDPM train / DDIM sample; SR3 concat conditioning; mean-reverting option. Best generative prior under total occlusion. |
+| `uncertainty`   | Uncertainty head  | Wraps a U-Net trunk, adds per-pixel aleatoric variance (Gaussian NLL). The operational confidence map. |
 
-> Concrete model implementations are delivered by the model build stage; the
-> scaffold in this repo provides the **interface, registry, losses, and config**
-> they plug into. `cloudremoval.models.registry.list_models()` lists whatever is
-> currently registered.
+> All six are **implemented and registered** (pure `torch`, CPU-runnable). The
+> registry keys above are the canonical names used by the CLI (`-s model.name=…`),
+> the benchmark, and the serving API. Confirm the live list with
+> `cloudremoval.models.registry.list_models()` →
+> `['diffusion', 'dsen2cr', 'restormer', 'spagan', 'uncertainty', 'unet']`.
+> Each optionally loads external pretrained weights at runtime, with a from-scratch
+> fallback. See [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) for the full per-model card.
 
 ---
 
@@ -149,13 +162,14 @@ pip install torch --index-url https://download.pytorch.org/whl/cpu
 # 2. The package (core stack only — enough for the synthetic CPU pipeline)
 pip install -e .
 
-# …or with optional extras as needed:
-pip install -e ".[geo]"     # rasterio, COG, masking, data engine
-pip install -e ".[serve]"   # rio-tiler, redis tiling/serving
-pip install -e ".[train]"   # lightning, torchmetrics, mlflow
-pip install -e ".[accel]"   # onnx, onnxruntime, faiss
-pip install -e ".[dev]"     # pytest, ruff, black, mypy, pre-commit
-pip install -e ".[all]"     # everything
+# …or with optional extras as needed (all lazily imported):
+pip install -e ".[geo]"     # rasterio, rio-cogeo, rioxarray, arosics, omnicloudmask, ...
+pip install -e ".[data]"    # pystac-client, planetary-computer, earthengine-api, sentinelhub
+pip install -e ".[serve]"   # rio-tiler, redis, pillow (dynamic tiling + cache)
+pip install -e ".[accel]"   # faiss-cpu, onnxruntime (ANN retrieval + accelerated inference)
+pip install -e ".[train]"   # pytorch-lightning, mlflow, tensorboard, lpips, matplotlib
+pip install -e ".[dev]"     # pytest, ruff, black, pre-commit, httpx
+pip install -e ".[all]"     # everything (geo,data,serve,accel,train,dev)
 ```
 
 Or use the Makefile (creates a venv, installs CPU torch + dev extras):
@@ -198,9 +212,19 @@ make test         # = pytest -q
 steps, and `device: cpu` — it finishes in seconds and is the **contract test**
 exercised by CI.
 
-> During parallel development, a subcommand whose implementation stage hasn't
-> landed yet prints a clear _"not yet implemented"_ message and exits cleanly,
-> rather than breaking the rest of the CLI.
+### Run the demo notebook
+
+[`notebooks/01_quickstart.ipynb`](notebooks/01_quickstart.ipynb) is a self-contained,
+CPU-runnable walkthrough: synthetic LISS-IV scene → `CloudSimulator` pairs → build a
+registry model → a few train steps → reconstruction + uncertainty map → the masked
+MVES metric suite → a 2-model `run_benchmark` leaderboard → a FastAPI serving demo.
+
+```bash
+pip install -e ".[train]"   # pulls matplotlib (also: matplotlib jupyter nbconvert)
+jupyter notebook notebooks/01_quickstart.ipynb
+# or run it headless:
+jupyter nbconvert --to notebook --execute --inplace notebooks/01_quickstart.ipynb
+```
 
 ---
 
@@ -224,7 +248,7 @@ Examples:
 
 ```bash
 # Override the model and cap steps inline
-cloudremoval train -c configs/cpu_smoke.yaml -s model.name=dsen2cr_fusion -s train.max_steps=1
+cloudremoval train -c configs/cpu_smoke.yaml -s model.name=dsen2cr -s train.max_steps=1
 
 # Point at a real-data config (requires the [geo] extra + data)
 cloudremoval preprocess -c configs/gpu_full.yaml
@@ -286,6 +310,46 @@ aux={...})`. Full spec: [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) §2.
 
 ---
 
+## Documentation
+
+| Document | What's in it |
+| -------- | ------------ |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Master technical design — data strategy, unified framework, pipeline, evaluation, O(1) serving. |
+| [`docs/COMPARATIVE_ASSESSMENT.md`](docs/COMPARATIVE_ASSESSMENT.md) | 30+ GenAI methods scored; the 6 implemented + why (the required comparative-assessment deliverable). |
+| [`docs/DATA_CARD.md`](docs/DATA_CARD.md) | Multi-satellite data strategy, band-mapping, synthetic-cloud + transfer, access (Bhoonidhi/GEE/STAC/CDSE), licenses, data commands. |
+| [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) | The 6 registry models (family, inputs, key idea, params), intended/out-of-scope use, metrics, limitations & risks. |
+| [`docs/API.md`](docs/API.md) | CLI reference (all 8 commands) + REST API (endpoints/schemas/curl/httpx) + the O(1) serving design. |
+| [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) | The frozen interface/work contract (SAMPLE, registry, losses, config). |
+| [`notebooks/01_quickstart.ipynb`](notebooks/01_quickstart.ipynb) | Executable CPU walkthrough end-to-end. |
+| [`research/`](research/) | The 6 grounding research briefs (methods/metrics in `01–03,05`; datasets/satellites in `04`; LISS-IV/ISRO/Bhoonidhi/NER in `06`). |
+
+## Results (smoke)
+
+The CI/CPU smoke (`configs/cpu_smoke.yaml`) trains, evaluates, and benchmarks every
+registered model on **synthetic** data in seconds, and the notebook prints a live
+`whole` vs `cloud`-region MVES table + a 2-model leaderboard. **These numbers are
+illustrative of the plumbing, not of real-world accuracy** — they come from tiny
+synthetic tiles and a handful of steps. Real metrics require the Bhoonidhi LISS-IV +
+Sentinel-1/2 + DEM workflow described in [`docs/DATA_CARD.md`](docs/DATA_CARD.md).
+
+## Status / limitations
+
+- **What's shipped:** the full framework — 6 registered GenAI models, the 8-command
+  CLI, masked/stratified MVES metrics, the benchmark leaderboard, tiled inference, and
+  the FastAPI serving app — all CPU-runnable on synthetic data, with a green CI smoke
+  and 50 passing tests.
+- **What's synthetic vs real:** the smoke path is **synthetic** (procedural LISS-IV-like
+  scenes + injected clouds). Real-data training/eval on **Bhoonidhi** LISS-IV (with
+  co-registered Sentinel-1/2 + DEM) is wired via config + lazy `[geo]`/`[data]` extras
+  but requires downloaded scenes and is **not** exercised by the smoke.
+- **Known hard cases:** spectral hallucination under thick cloud, the synthetic→real and
+  S2→LISS-IV domain gaps, snow≈cloud in 3 bands, and uncertainty calibration — mitigated
+  (SAM/CARL losses, uncertainty head, SBAF, cross-verification) but not eliminated. See
+  [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) §6. **Not for safety-critical use without
+  validation on real LISS-IV pairs.**
+
+---
+
 ## Extending: add a model
 
 ```python
@@ -337,8 +401,10 @@ bah2026-ps2/
 │   ├── serving/  app (FastAPI) · tiles · schemas
 │   └── utils/    geo · io · logging · seed
 ├── scripts/                         # thin CLI delegates (download/preprocess/…/serve)
-├── tests/                           # conftest fixtures + CPU end-to-end suite
-└── docs/                            # COMPARATIVE_ASSESSMENT · BUILD_PLAN · cards · API
+├── tests/                           # conftest fixtures + CPU end-to-end suite (50 tests)
+├── notebooks/                       # 01_quickstart.ipynb (executable CPU walkthrough)
+├── research/                        # 01–06 grounding briefs (methods · metrics · datasets · LISS-IV/NER)
+└── docs/                            # COMPARATIVE_ASSESSMENT · BUILD_PLAN · DATA_CARD · MODEL_CARD · API
 ```
 
 ---

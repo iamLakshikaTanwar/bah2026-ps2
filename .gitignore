@@ -71,6 +71,9 @@ lightning_logs/
 
 # ---- Jupyter ----
 .ipynb_checkpoints/
+# notebook-run artifacts (e.g. benchmark out_dir when a notebook is executed in-place)
+notebooks/outputs/
+outputs/
 
 # ---- Misc ----
 *.log
