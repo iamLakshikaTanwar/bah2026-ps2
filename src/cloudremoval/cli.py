@@ -19,6 +19,7 @@ stack.
 from __future__ import annotations
 
 import importlib
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -85,6 +86,25 @@ def _load(config: Path, set_: list[str] | None) -> Config:
     return cfg
 
 
+def _ensure_scripts_importable() -> None:
+    """Put the repository root on ``sys.path`` so ``import scripts.*`` resolves.
+
+    The ``scripts/`` package lives at the repository root (not under ``src/``), so
+    it is *not* installed by ``pip install -e .``. The installed ``cloudremoval``
+    console script therefore runs with a ``sys.path`` that does not include the
+    repo root, and ``importlib.import_module("scripts.<name>")`` would fail even
+    though the file exists. We locate the repo root relative to this module
+    (``…/src/cloudremoval/cli.py`` → repo root) and prepend it if it actually
+    contains a ``scripts`` package. This is a no-op when running from the repo
+    root (or when already on the path).
+    """
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    if (repo_root / "scripts" / "__init__.py").exists():
+        root = str(repo_root)
+        if root not in sys.path:
+            sys.path.insert(0, root)
+
+
 def _run_script(module_name: str, cfg: Config, **kwargs: Any) -> None:
     """Lazily import ``scripts.<module_name>`` and call its ``main(cfg, **kwargs)``.
 
@@ -97,6 +117,7 @@ def _run_script(module_name: str, cfg: Config, **kwargs: Any) -> None:
         typer.Exit: With a clear message if the script module (or its ``main``)
             does not exist yet — keeps the rest of the CLI usable.
     """
+    _ensure_scripts_importable()
     try:
         module = importlib.import_module(f"scripts.{module_name}")
     except ModuleNotFoundError as exc:
