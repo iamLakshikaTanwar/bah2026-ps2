@@ -48,11 +48,11 @@ coverage.xml
 Thumbs.db
 
 # ---- ML / experiment artifacts ----
-outputs/
-mlruns/
-wandb/
+/outputs/
+/mlruns/
+/wandb/
 lightning_logs/
-checkpoints/
+/checkpoints/
 *.ckpt
 *.pt
 *.pth
@@ -60,7 +60,7 @@ checkpoints/
 *.engine
 
 # ---- Data & geospatial outputs (synthetic + real; keep configs, not data) ----
-data/
+/data/
 !configs/data/
 *.tif
 *.tiff
