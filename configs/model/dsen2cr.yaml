@@ -1,0 +1,16 @@
+# DSen2-CR-style SAR-optical fusion ResNet (thick-cloud workhorse).
+# Partial `model:` config — merge over base.yaml / cpu_smoke.yaml.
+# Early channel-concat fusion of optical + SAR (+ DEM), residual prediction with a
+# long global skip; trained with CARL (mask-weighted L1) + SAM.
+
+model:
+  name: dsen2cr
+  in_channels: 3
+  out_channels: 3
+  base_channels: 32
+  depth: 3 # -> num_res_blocks = max(4, 2*depth) = 6
+  num_res_blocks: 6 # explicit override (optional)
+  use_sar: true # SAR fusion is the point of this model
+  use_dem: true
+  use_temporal: false
+  uncertainty: false

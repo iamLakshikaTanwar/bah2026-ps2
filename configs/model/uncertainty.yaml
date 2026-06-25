@@ -1,0 +1,21 @@
+# UnCRtainTS-style aleatoric uncertainty model (mean + log-variance heads).
+# Partial `model:` config — merge over base.yaml / cpu_smoke.yaml.
+# Wraps a small U-Net trunk; predicts reconstruction + per-pixel variance,
+# trained with a heteroscedastic Gaussian NLL.
+
+model:
+  name: uncertainty
+  in_channels: 3
+  out_channels: 3
+  base_channels: 32
+  depth: 3
+  use_sar: false
+  use_dem: false
+  use_temporal: false
+  uncertainty: true
+  use_cloud_mask: true
+  backbone: unet # feature trunk (only 'unet' bundled)
+  uncertainty_per_band: false # single shared variance map (true -> per-band)
+  logvar_min: -7.0
+  logvar_max: 3.0
+  lambda_sam: 0.1

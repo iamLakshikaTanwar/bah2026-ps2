@@ -1,0 +1,81 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ---- Virtual environments ----
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# ---- Testing / coverage / linters ----
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# ---- Editors / OS ----
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ---- ML / experiment artifacts ----
+/outputs/
+/mlruns/
+/wandb/
+lightning_logs/
+/checkpoints/
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.engine
+
+# ---- Data & geospatial outputs (synthetic + real; keep configs, not data) ----
+/data/
+!configs/data/
+*.tif
+*.tiff
+*.npy
+*.npz
+*.SAFE/
+*.zip
+
+# ---- Jupyter ----
+.ipynb_checkpoints/
+# notebook-run artifacts (e.g. benchmark out_dir when a notebook is executed in-place)
+notebooks/outputs/
+outputs/
+
+# ---- Misc ----
+*.log
+.env
+.env.*

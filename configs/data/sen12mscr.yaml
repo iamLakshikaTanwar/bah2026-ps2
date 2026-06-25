@@ -1,0 +1,22 @@
+# SEN12MS-CR data config (B1) — S1 SAR + cloudy/clear S2 triplets.
+# Partial `data:` block matching cloudremoval.config.DataConfig. Requires the
+# SEN12MS-CR dataset (GeoTIFF triplets + manifest.json) under `root` and rasterio
+# installed — NOT exercised on the CPU smoke. Sentinel-2 {B3,B4,B8} are mapped to
+# LISS-IV {Green,Red,NIR}; used to pretrain the SAR-conditioned path before
+# fine-tuning on LISS-IV (research/06 §E.5).
+
+data:
+  name: sen12mscr
+  root: data/sen12mscr # dir with manifest.json listing {id, s1, s2_cloudy, s2_clear}
+  tile_size: 256
+  halo: 32
+  bands: [green, red, nir]
+  use_sar: true
+  use_dem: false
+  use_temporal: false
+  max_temporal: 3
+  norm: zscore
+  batch_size: 8
+  num_workers: 4
+  synthetic_n: 0 # ignored for real data
+  cloud_mode: mixed

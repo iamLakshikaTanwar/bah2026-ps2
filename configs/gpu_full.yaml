@@ -1,0 +1,76 @@
+# Full GPU / real-data configuration. Same structure as cpu_smoke.yaml; only the
+# scale and device change. Intended for real Bhoonidhi/Copernicus ingestion and
+# full-depth models on CUDA. Extends base.yaml.
+
+base: base.yaml
+
+data:
+  name: lissiv_ner # switch to real LISS-IV NER loader (B1, optional deps)
+  root: data/lissiv_ner
+  tile_size: 256
+  halo: 32
+  bands: [green, red, nir]
+  use_sar: true
+  use_dem: true
+  use_temporal: true
+  max_temporal: 3
+  norm: percentile
+  batch_size: 16
+  num_workers: 8
+  synthetic_n: 0
+  cloud_mode: mixed
+
+model:
+  name: dsen2cr_fusion # robust SAR-optical fusion workhorse for thick NER cloud
+  base_channels: 64
+  depth: 6
+  use_sar: true
+  use_dem: true
+  use_temporal: false
+  uncertainty: true
+  timesteps: 1000
+  sample_steps: 25
+  mean_reverting: true
+  gan_lambda_l1: 100.0
+
+train:
+  epochs: 100
+  max_steps: null
+  lr: 1.0e-4
+  weight_decay: 1.0e-5
+  device: cuda
+  precision: "16"
+  use_lightning: true
+  grad_clip: 1.0
+  log_every: 50
+  ckpt_dir: outputs/full/ckpt
+  seed: 1337
+  loss:
+    l1: 1.0
+    carl: 1.0
+    ssim: 0.2
+    sam: 0.5
+    perceptual: 0.1
+    nll: 0.5
+
+eval:
+  masked: true
+  strata: [whole, cloud, shadow, thin, thick]
+  metrics: [psnr, ssim, sam, ergas, ndvi_mae, sid, lpips]
+  out_dir: outputs/full/eval
+
+infer:
+  tile_size: 256
+  halo: 32
+  blend: hann
+  device: cuda
+  backend: torch # switch to onnx | tensorrt for accelerated serving
+  out_cog: outputs/full/recon.tif
+  write_uncertainty: true
+
+serve:
+  host: 0.0.0.0
+  port: 8000
+  cog_dir: outputs/full
+  cache: redis
+  redis_url: redis://redis:6379/0

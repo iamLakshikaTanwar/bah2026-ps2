@@ -1,0 +1,18 @@
+# U-Net CNN baseline (the hallucination / control yardstick).
+# Partial `model:` config — merge over base.yaml / cpu_smoke.yaml (its values win
+# over base defaults). Sized small so a CPU smoke run is fast.
+#
+# Pair with a LossConfig of charbonnier-equivalent terms; the model's own loss()
+# computes charbonnier + ssim + sam (+ carl) regardless of train.loss weights.
+
+model:
+  name: unet
+  in_channels: 3
+  out_channels: 3
+  base_channels: 32
+  depth: 3
+  use_sar: false # optical-only baseline by design
+  use_dem: false
+  use_temporal: false
+  uncertainty: false
+  use_cloud_mask: true # concat cloud mask as an extra input channel

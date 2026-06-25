@@ -1,0 +1,57 @@
+# CPU-smoke configuration — the contract test (BUILD_PLAN §5).
+# Tiny everything: synthetic data, 64x64 patches, batch 2, 1 epoch / few steps,
+# CPU only, no network. Drives CI and the jury demo. Extends base.yaml; only
+# values change (never structure), so the same code scales to gpu_full.yaml.
+
+base: base.yaml
+
+data:
+  name: synthetic
+  tile_size: 64
+  halo: 8
+  batch_size: 2
+  num_workers: 0
+  synthetic_n: 8
+  use_sar: true
+  use_dem: true
+  use_temporal: false
+  cloud_mode: mixed
+
+model:
+  name: unet
+  base_channels: 16
+  depth: 2
+  use_sar: false
+  uncertainty: false
+  sample_steps: 2 # diffusion: tiny DDIM step count for smoke
+
+train:
+  epochs: 1
+  max_steps: 2
+  device: cpu
+  precision: "32"
+  use_lightning: false
+  log_every: 1
+  ckpt_dir: outputs/smoke/ckpt
+  seed: 1337
+  loss:
+    l1: 1.0
+    ssim: 0.1
+
+eval:
+  masked: true
+  out_dir: outputs/smoke/eval
+
+infer:
+  tile_size: 64
+  halo: 8
+  blend: hann
+  device: cpu
+  out_cog: outputs/smoke/recon.tif
+  write_uncertainty: true
+
+serve:
+  host: 127.0.0.1
+  port: 8000
+  cog_dir: outputs/smoke
+  cache: memory

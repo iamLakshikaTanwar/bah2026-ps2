@@ -1,0 +1,25 @@
+# Synthetic data config (B1) — drives the CPU smoke.
+# A partial `data:` block matching cloudremoval.config.DataConfig; merge over
+# base.yaml (or use as `--set`/override source). Fully offline: the synthetic
+# dataset procedurally generates clear 3-band LISS-IV-like scenes + SAR proxy +
+# DEM, then injects synthetic clouds/shadows. No network, no heavy deps.
+
+data:
+  name: synthetic
+  root: null # set to a dir of clear .npy/GeoTIFFs to clothe real clears instead
+  tile_size: 64
+  halo: 8
+  bands: [green, red, nir]
+  use_sar: true
+  use_dem: true
+  use_temporal: false
+  max_temporal: 3
+  norm: zscore # zscore | percentile
+  batch_size: 2
+  num_workers: 0
+  synthetic_n: 8 # number of synthetic samples (tiny for CPU smoke)
+  cloud_mode: mixed # thin | thick | mixed
+  # Synthetic-cloud generator knobs (consumed by data.synthetic_clouds via extra).
+  cloud_coverage: 0.35 # target cloud-cover fraction
+  cloud_thickness: 1.0 # peak opacity for thick clouds
+  shadow_strength: 0.45 # darkening at shadow core (1=none, lower=darker)

@@ -1,0 +1,163 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cloudremoval"
+version = "0.1.0"
+description = "Model-agnostic GenAI cloud removal & reconstruction for LISS-IV imagery (BAH 2026 PS2)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "BAH 2026 PS2 Team" }]
+keywords = [
+    "remote-sensing",
+    "cloud-removal",
+    "diffusion",
+    "gan",
+    "liss-iv",
+    "deep-learning",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
+
+# ---------------------------------------------------------------------------
+# CORE dependencies — the *minimal* stack the CPU-smoke path may rely on.
+# Importing `cloudremoval` and running the synthetic pipeline must work with
+# ONLY these. Every heavy / geospatial / accelerator dependency is optional
+# (see [project.optional-dependencies]) and lazily imported at call sites.
+# ---------------------------------------------------------------------------
+dependencies = [
+    "numpy>=1.24",
+    "torch>=2.0",
+    "pydantic>=2.5",
+    "pyyaml>=6.0",
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "typer>=0.9",
+    "click>=8.1",       # hard Typer dependency (pinned for reproducibility)
+    "httpx>=0.27",      # FastAPI TestClient transport; serving smoke client
+]
+
+[project.optional-dependencies]
+# Geospatial I/O, masking & image ops (B1 / B4): GeoTIFF/COG read+write,
+# reprojection, co-registration, cloud masking, synthetic clouds, augmentation.
+# Every import here is lazy with a NumPy/torch fallback — never required on the
+# CPU-smoke stack.
+geo = [
+    "rasterio>=1.3",
+    "rio-cogeo>=5.0",
+    "rioxarray>=0.15",
+    "pyproj>=3.5",
+    "shapely>=2.0",
+    "geopandas>=0.14",
+    "arosics>=1.7",
+    "omnicloudmask>=1.0",
+    "scikit-image>=0.21",
+    "opencv-python-headless>=4.8",
+    "albumentations>=1.3",
+    "scipy>=1.10",
+]
+# Multi-source data ingestion (B1): STAC / Planetary Computer / GEE / Sentinel Hub.
+data = [
+    "pystac-client>=0.7",
+    "planetary-computer>=1.0",
+    "earthengine-api>=0.1",
+    "sentinelhub>=3.9",
+]
+# Serving extras (B4): dynamic XYZ tiling, caching, image encode.
+serve = [
+    "rio-tiler>=6.0",
+    "redis>=5.0",
+    "pillow>=10.0",
+]
+# Accelerated inference & retrieval (B4): ONNX runtime, FAISS ANN.
+accel = [
+    "faiss-cpu>=1.7",
+    "onnxruntime>=1.17",
+]
+# Training, experiment tracking & perceptual metrics (B3). LPIPS degrades to NaN
+# if absent.
+train = [
+    "pytorch-lightning>=2.1",
+    "mlflow>=2.9",
+    "tensorboard>=2.15",
+    "lpips>=0.1.4",
+    "matplotlib>=3.7",
+]
+# Developer tooling: lint, format, test, hooks.
+dev = [
+    "pytest>=7.4",
+    "ruff>=0.3",
+    "black>=24.1",
+    "pre-commit>=3.6",
+    "httpx>=0.27",
+]
+# Convenience meta-extra installing everything (union of the above).
+all = [
+    "cloudremoval[geo,data,serve,accel,train,dev]",
+]
+
+[project.scripts]
+cloudremoval = "cloudremoval.cli:app"
+
+[project.urls]
+Documentation = "https://github.com/your-org/bah2026-ps2/blob/main/ARCHITECTURE.md"
+Repository = "https://github.com/your-org/bah2026-ps2"
+
+# ---------------------------------------------------------------------------
+# Packaging — src/ layout. `scripts` is a top-level package (CLI delegates to it).
+# ---------------------------------------------------------------------------
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["cloudremoval*"]
+
+# ---------------------------------------------------------------------------
+# Tooling configuration
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests", "scripts"]
+# Notebooks use display-expression / imports-not-at-top idioms and carry embedded
+# outputs we must not re-save; exclude them so a repo-wide `ruff check .` is green
+# while src/, tests/ and scripts/ stay fully linted.
+extend-exclude = ["notebooks", "*.ipynb"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B", "C4", "SIM"]
+ignore = [
+    "B008", # function call in default arg — required by Typer's Option()/Argument()
+    "E501", # line length handled by black
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"] # re-exports
+"tests/*" = ["B011"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+addopts = "-q --import-mode=importlib"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+warn_unused_ignores = false
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "src"

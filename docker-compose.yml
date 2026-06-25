@@ -1,0 +1,40 @@
+# docker-compose for the cloudremoval serving stack: FastAPI api + Redis cache.
+# The api boots on CPU with cache="memory" by default; set CLOUDREMOVAL_CACHE and
+# the serve config to "redis" to use the redis service for hot-tile caching.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cloudremoval:latest
+    container_name: cloudremoval-api
+    ports:
+      - "8000:8000"
+    environment:
+      - CLOUDREMOVAL_LOG=INFO
+      - CLOUDREMOVAL_REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./outputs:/app/outputs
+      - ./configs:/app/configs:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    command:
+      ["uvicorn", "cloudremoval.serving.app:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  redis:
+    image: redis:7-alpine
+    container_name: cloudremoval-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  outputs:
